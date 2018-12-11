@@ -1,0 +1,177 @@
+// HelloWorld
+//---------------------------------------------------------------------------
+
+// Windows Platform (VS 2017 Compiler, Windows 10.0A SDK)
+// 指定开发环境
+//----------------------------------------------------------------------------
+.VS2017_BasePath    = 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise'
+.VS2017_Version 	= '14.16.27023'
+
+.Windows10_SDKBasePath   = 'C:\Program Files (x86)\Windows Kits\10'
+.Windows10_SDKVersion    = '10.0.17763.0'
+
+// Settings
+//----------------------------------------------------------------------------
+Settings
+{
+	.Environment = { "PATH=$VS2017_BasePath$\Common7\IDE\;$VS2017_BasePath$\VC\Tools\MSVC\$VS2017_Version$\bin\Hostx64\x64\" ,
+					 "TMP=C:\Windows\Temp",
+					 "SystemRoot=C:\Windows"}
+	.CachePath   = '\\ZT-2017245\FASTBuildShared\Cache'
+}
+
+// X64 Compiler
+//------------------------------------------------------------------------------
+Compiler( 'Compiler-VS2017-x64' )
+{
+    .Root       = '$VS2017_BasePath$/VC/Tools/MSVC/$VS2017_Version$/bin/Hostx64/x64'
+    .Executable = '$Root$/cl.exe'
+    .ExtraFiles = { '$Root$/c1.dll'
+                    '$Root$/c1xx.dll',
+                    '$Root$/c2.dll',
+                    '$Root$/msobj140.dll'
+                    '$Root$/mspdb140.dll'
+                    '$Root$/mspdbcore.dll'
+                    '$Root$/mspdbsrv.exe'
+                    '$Root$/mspft140.dll'
+                    '$Root$/msvcp140.dll'
+                    '$Root$/vcruntime140.dll'
+                    '$Root$/2052/clui.dll'
+                  }
+}
+
+// X86 Compiler
+//------------------------------------------------------------------------------
+Compiler( 'Compiler-VS2017-x86' )
+{
+    .Root           = '$VS2017_BasePath$/VC/Tools/MSVC/$VS2017_Version$/bin/Hostx64/x86'
+    .Executable = '$Root$/cl.exe'
+    .ExtraFiles = { '$Root$/c1.dll'
+                    '$Root$/c1xx.dll',
+                    '$Root$/c2.dll',
+                    '$Root$/../x64/msobj140.dll' // NOTE: Annoyingly not present in the same dir
+                    '$Root$/../x64/mspdb140.dll' // NOTE: Annoyingly not present in the same dir
+                    '$Root$/../x64/mspdbcore.dll'// NOTE: Annoyingly not present in the same dir
+                    '$Root$/../x64/mspdbsrv.exe' // NOTE: Annoyingly not present in the same dir
+                    '$Root$/../x64/mspft140.dll' // NOTE: Annoyingly not present in the same dir
+                    '$Root$/msvcp140.dll'
+                    '$Root$/vcruntime140.dll'
+                    '$Root$/2052/clui.dll'
+                  }
+}
+
+
+// X64 ToolChain
+// 指定具体的工具路径
+// ------------------------------------------------------------------------------
+// 编译器
+.Compiler		 = 'Compiler-VS2017-x86'
+// 编译选项
+.CompilerOptions = '"%1"'			// Input
+				 + ' /Fo"%2"'       // Output
+				 + ' /Z7'           // Debug format (in.obj)
+				 + ' /c'			// Compile only
+				 + ' /nologo'		// No compiler span
+				 + ' /EHsc'
+				 + ' /MTd'
+// 链接器
+.Linker          = '$VS2017_BasePath$\VC\Tools\MSVC\$VS2017_Version$\bin\Hostx64\x86\link.exe'
+// 链接选项
+.LinkerOptions   = ' /OUT:"%2"'		// Output
+				 + ' "%1"'			// Inpuut
+				 + ' /WX'			// Warnings as errors
+				 + ' /NOLOGO'		// No Linker spam 
+				 + ' /DEBUG'		// Keep debug info when linking
+				 + ' /NODEFAULTLIB:libcmt.lib' // We'll specify the libs explicitly
+				 + ' /MACHINE:X86'
+
+// 库生成器
+.Librarian          = '$VS2017_BasePath$/VC/Tools/MSVC/$VS2017_Version$/bin/Hostx64/x86/lib.exe'
+// 库生成器选项
+.LibrarianOptions   = '"%1"'
+                    + ' /OUT:"%2"'
+                    + ' /nologo'
+                    + ' /MACHINE:X86'
+
+// Include paths
+// 包含目录 -----------------------------------------------------------------------------------
+.BaseIncludePaths = ' -I"./"'
+				  + ' -I"$VS2017_BasePath$/VC/Tools/MSVC/$VS2017_Version$/include/"'
+				  + ' -I"$VS2017_BasePath$/VC/Tools/MSVC/$VS2017_Version$/atlmfc/include/"'
+				  + ' -I"$VS2017_BasePath$/VC/Tools/MSVC/$VS2017_Version$/atlmfc/src/"'
+				  + ' -I"$Windows10_SDKBasePath$/Include/$Windows10_SDKVersion$/ucrt/"'
+				  + ' -I"$Windows10_SDKBasePath$/Include/$Windows10_SDKVersion$/um/"'
+				  + ' -I"$Windows10_SDKBasePath$/Include/$Windows10_SDKVersion$/shared/"'
+				  + ' -I"$Windows10_SDKBasePath$/Include/$Windows10_SDKVersion$/winrt/"'
+.CompilerOptions  + .BaseIncludePaths
+
+// Library paths
+// ---------------------------------------------------------------------------------------------
+.LibPaths         = ' /LIBPATH:"$VS2017_BasePath$\VC\Tools\MSVC\$VS2017_Version$\lib\x86"'
+				  + ' /LIBPATH:"$VS2017_BasePath$\VC\Tools\MSVC\$VS2017_Version$\atlmfc\lib\x86"'
+				  + ' /LIBPATH:"$Windows10_SDKBasePath$\Lib\$Windows10_SDKVersion$\ucrt\x86"'
+				  + ' /LIBPATH:"$Windows10_SDKBasePath$\Lib\$Windows10_SDKVersion$\um\x86"'
+				  + ' /LIBPATH:"$Windows10_SDKBasePath$\Lib\$Windows10_SDKVersion$\ucrt_enclave\x86"'
+				  + ' /LIBPATH:"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\Lib\um\x86"'
+				  
+.LinkerOptions    + .LibPaths
+
+
+.myStaticLibPaths = {'April', 'February', 'January', 'March', 'May'}
+					  
+ForEach(.myLibPath in .myStaticLibPaths)
+{
+	Library( '$myLibPath$' )
+	{
+		.CompilerInputPath  = 'LIB\$myLibPath$'
+		.CompilerOutputPath = '..\package\objs\$myLibPath$'
+		.LibrarianOutput    = '..\package\lib\$myLibPath$.lib'
+	}
+}
+
+ObjectList('panny_dll_objs')                 // 生成gate所需的objs文件
+{
+    .CompilerInputPath = 'DLL\panny_dll'         // 源文件所在目录,就是把该目录下所有的.cxx\.c文件编译.obj(s)文件
+    .CompilerOutputPath = '..\package\objs\panny_dll'   // .obj文件 输出目录
+}
+
+DLL( 'panny_dll' )
+{
+	.Libraries  = {'panny_dll_objs'}
+	.LinkerOutput = '..\package\DLL\panny_dll.dll'
+	.LinkerOptions + ' /DLL';
+	.CompilerOptions + ' /DLL /MT'
+}
+
+// 生成gate.exe
+// gate------------------------------------------------------------------------------
+ObjectList('gate_objs')                 // 生成gate所需的objs文件
+{
+    .CompilerInputPath = 'gate'         // 源文件所在目录,就是把该目录下所有的.cxx\.c文件编译.obj(s)文件
+    .CompilerOutputPath = '..\package\objs\gate'   // .obj文件 输出目录
+}
+
+Executable('gate')
+{
+    .Libraries          = { 'gate_objs', 'April', 'February', 'January', 'March', 'May' }   // 把gate.exe所需的.obj(s)文件和.lib(s)文件链接成.exe文件
+    .LinkerOutput       = '..\package\bin\gate.exe'                    // .exe文件输出目录
+	//.LinkerOptions + 'panny_dll.lib'
+}
+
+// game------------------------------------------------------------------------------
+ObjectList('game_objs')                 // 生成game所需的objs文件
+{
+    .CompilerInputPath = 'game'         // 源文件所在目录,就是把该目录下所有的.cxx\.c文件编译.obj(s)文件
+    .CompilerOutputPath = '..\package\objs\game'   // .obj文件 输出目录
+}
+
+Executable('game')
+{
+    .Libraries          = { 'game_objs', 'April', 'February', 'January', 'March', 'May' }  // 把game.exe所需的.obj(s)文件和.lib(s)文件链接成.exe文件
+    .LinkerOutput       = '..\package\bin\game.exe'    // .exe文件输出目录
+}
+
+// All
+//------------------------------------------------------------------------------
+Alias( 'all' ) { .Targets = { 'panny_dll' } }   
+
